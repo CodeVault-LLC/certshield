@@ -70,6 +70,8 @@ jobs:
 
       - name: Generate Changelog
         run: changelogithub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get release tag
         id: get_tag
