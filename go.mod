@@ -1,6 +1,6 @@
 module github.com/codevault-llc/certshield
 
-go 1.22.5
+go 1.22
 
 require (
 	github.com/CaliDog/certstream-go v0.0.0-20200713031452-eca7997412f1
