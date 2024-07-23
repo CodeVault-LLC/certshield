@@ -1,5 +1,5 @@
 module.exports = {
-  branches: ["main", "refs/tags/v*"],
+  branches: ["main"],
   repositoryUrl: "https://github.com/codevault-llc/certshield",
   plugins: [
     "@semantic-release/commit-analyzer",
