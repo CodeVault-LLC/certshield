@@ -70,40 +70,42 @@ jobs:
         run: npm install -g changelogithub
 
       - name: Generate Changelog
+        id: generate_changelog
         run: changelogithub
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Install GitHub CLI
+        uses: ksivamuthu/actions-setup-gh-cli@v3
+        with:
+          version: 2.24.3
+
+      - name: Create or Update Release
+        id: create_update_release
+        run: |
+          gh release view ${{ github.ref }} > /dev/null 2>&1
+          if [ $? -eq 0 ]; then
+            echo "Release already exists. Updating release."
+            gh release edit ${{ github.ref }} --notes "${{ steps.generate_changelog.outputs.changelog }}"
+          else
+            echo "Creating a new release."
+            gh release create ${{ github.ref }} --title "Release ${{ github.ref }}" --notes "${{ steps.generate_changelog.outputs.changelog }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: ${{ steps.generate_changelog.outputs.changelog }}
-          draft: false
-          prerelease: false
 
       - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
+        run: |
+          gh release upload ${{ github.ref }} certshield-ubuntu-latest-amd64.tar.gz
+          gh release upload ${{ github.ref }} certshield-ubuntu-latest-386.tar.gz
+          gh release upload ${{ github.ref }} certshield-ubuntu-latest-arm.tar.gz
+          gh release upload ${{ github.ref }} certshield-ubuntu-latest-arm64.tar.gz
+          gh release upload ${{ github.ref }} certshield-macos-latest-amd64.tar.gz
+          gh release upload ${{ github.ref }} certshield-macos-latest-386.tar.gz
+          gh release upload ${{ github.ref }} certshield-macos-latest-arm.tar.gz
+          gh release upload ${{ github.ref }} certshield-macos-latest-arm64.tar.gz
+          gh release upload ${{ github.ref }} certshield-windows-latest-amd64.zip
+          gh release upload ${{ github.ref }} certshield-windows-latest-386.zip
+          gh release upload ${{ github.ref }} certshield-windows-latest-arm.zip
+          gh release upload ${{ github.ref }} certshield-windows-latest-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: |
-            certshield-ubuntu-latest-amd64.tar.gz
-            certshield-ubuntu-latest-386.tar.gz
-            certshield-ubuntu-latest-arm.tar.gz
-            certshield-ubuntu-latest-arm64.tar.gz
-            certshield-macos-latest-amd64.tar.gz
-            certshield-macos-latest-386.tar.gz
-            certshield-macos-latest-arm.tar.gz
-            certshield-macos-latest-arm64.tar.gz
-            certshield-windows-latest-amd64.zip
-            certshield-windows-latest-386.zip
-            certshield-windows-latest-arm.zip
-            certshield-windows-latest-arm64.zip
-          asset_name: ${{ matrix.os }}-${{ matrix.arch }}.${{ github.sha }}.${{ matrix.os == 'windows-latest' && 'zip' || 'tar.gz' }}
-          asset_content_type: ${{ matrix.os == 'windows-latest' && 'application/zip' || 'application/gzip' }}
