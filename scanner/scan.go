@@ -163,7 +163,7 @@ func Scan(data map[string]interface{}, rules []config.Rule, scanPage bool) {
 
 			if statusCode != 200 {
 				logMessage.Score += 5
-				logMessage.Matches = append(logMessage.Matches, "WebsiteDown-"+string(statusCode))
+				logMessage.Matches = append(logMessage.Matches, "WebsiteDown-"+fmt.Sprint(statusCode))
 			}
 		}
 
