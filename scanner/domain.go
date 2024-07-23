@@ -1,5 +1,7 @@
 package scanner
 
+import "strings"
+
 func IsSuspiciousTLD(domain string) bool {
 	var suspiciousTLDs = []string{
 		"xyz",
@@ -27,4 +29,12 @@ func IsSuspiciousTLD(domain string) bool {
 
 func IsSuspiciousLength(domain string) bool {
 	return len(domain) >= 50
+}
+
+func IsDeeplyNested(domain string) bool {
+	return strings.Count(domain, ".") >= 3
+}
+
+func HasManyHyphens(domain string) bool {
+	return !strings.Contains(domain, "xn--") && strings.Count(domain, "-") >= 4
 }

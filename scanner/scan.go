@@ -51,127 +51,142 @@ func EndsWithScan(r config.Rule, match string) []string {
 }
 
 func Scan(data map[string]interface{}, rules []config.Rule, scanPage bool) {
-	leafCert := data["leaf_cert"]
-	issuer, ok := leafCert.(map[string]interface{})["issuer"].(map[string]interface{})
-	if !ok {
-		utils.Logger.Error("Error parsing issuer")
+	if data["update_type"].(string) == "PrecertLogEntry" {
+		// Ignore precertificates
+	} else if data["update_type"].(string) == "PrecertEntryWithProof" {
 		return
-	}
+	} else if data["update_type"].(string) == "X509LogEntry" {
 
-	allDomains := leafCert.(map[string]interface{})["all_domains"].([]interface{})
-	for _, domain := range allDomains {
-		domainStr := domain.(string)
-
-		subjectOrg, ok := leafCert.(map[string]interface{})["subject"].(map[string]interface{})["O"].(string)
+		leafCert := data["leaf_cert"]
+		issuer, ok := leafCert.(map[string]interface{})["issuer"].(map[string]interface{})
 		if !ok {
-			subjectOrg = "N/A"
+			utils.Logger.Error("Error parsing issuer")
+			return
 		}
 
-		organizationUnit, ok := leafCert.(map[string]interface{})["subject"].(map[string]interface{})["OU"].(string)
-		if !ok {
-			organizationUnit = "N/A"
-		}
+		allDomains := leafCert.(map[string]interface{})["all_domains"].([]interface{})
+		for _, domain := range allDomains {
+			domainStr := domain.(string)
 
-		subjectCommonName, ok := leafCert.(map[string]interface{})["subject"].(map[string]interface{})["CN"].(string)
-		if !ok {
-			subjectCommonName = "N/A"
-		}
+			if scanPage {
+				validUrl := utils.ValidateURL(domainStr)
+				statusCode, error := utils.GetWebsite(validUrl)
 
-		certificate, err := json.MarshalIndent(leafCert, "", "\t")
-		if err != nil {
-			utils.Logger.Error("Error marshalling certificate", slog.String("error", err.Error()))
-		}
+				if error != "" {
+					return
+				}
 
-		logMessage := types.LogMessage{
-			Timestamp: time.Now().UTC(),
-			Domain:    domainStr,
-			Vendor:    utils.GetSeverity(0),
-
-			Score:   0,
-			Matches: []string{},
-
-			IssuerCommonName:    issuer["CN"].(string),
-			SubjectCommonName:   subjectCommonName,
-			IssuerOrganization:  issuer["O"].(string),
-			SubjectOrganization: subjectOrg,
-
-			SerialNumber: leafCert.(map[string]interface{})["serial_number"].(string),
-			NotBefore:    time.Unix(int64(leafCert.(map[string]interface{})["not_before"].(float64)), 0),
-			NotAfter:     time.Unix(int64(leafCert.(map[string]interface{})["not_after"].(float64)), 0),
-
-			KeyUsage:           leafCert.(map[string]interface{})["extensions"].(map[string]interface{})["keyUsage"].(string),
-			ExtendedKeyUsage:   leafCert.(map[string]interface{})["extensions"].(map[string]interface{})["extendedKeyUsage"].(string),
-			SignatureAlgorithm: leafCert.(map[string]interface{})["signature_algorithm"].(string),
-
-			OrganizationUnit: organizationUnit,
-
-			Certificate:      string(certificate),
-			IsExpired:        time.Now().UTC().After(time.Unix(int64(leafCert.(map[string]interface{})["not_after"].(float64)), 0)),
-			IsRevoked:        false,
-			IsWildcard:       domainStr[0] == '*',
-			IssuanceDate:     time.Unix(int64(leafCert.(map[string]interface{})["not_before"].(float64)), 0),
-			ValidationMethod: "N/A",
-			Country:          "N/A",
-			IPAddress:        "N/A",
-			CertSource:       "CertStream",
-			Notes:            "N/A",
-		}
-
-		if logMessage.IsExpired {
-			logMessage.Score += 15
-			logMessage.Matches = append(logMessage.Matches, "Expired")
-		}
-
-		if IsFreeCA(issuer) {
-			logMessage.Score += 10
-			logMessage.Matches = append(logMessage.Matches, "FreeCA")
-		}
-
-		if IsSuspiciousTLD(domainStr) {
-			logMessage.Score += 5
-			logMessage.Matches = append(logMessage.Matches, "SuspiciousTLD")
-		}
-
-		if domainStr[0] == '*' {
-			domainStr = domainStr[2:]
-		}
-
-		if IsSuspiciousLength(domainStr) {
-			logMessage.Score += 5
-			logMessage.Matches = append(logMessage.Matches, "SuspiciousLength")
-		}
-
-		for _, rule := range rules {
-			for range rule.Words {
-				scan := GenericScan(rule, domainStr)
-
-				if len(scan) > 0 {
-					logMessage.Score += 1
-					logMessage.Matches = append(logMessage.Matches, rule.RuleID)
+				if !utils.ValidateResponse(statusCode) {
+					return
 				}
 			}
-		}
 
-		if scanPage {
-			validUrl := utils.ValidateURL(domainStr)
-			statusCode, error := utils.GetWebsite(validUrl)
-
-			if error != "" {
-				logMessage.Score += 5
-				logMessage.Matches = append(logMessage.Matches, "WebsiteDown-noDial")
+			subjectOrg, ok := leafCert.(map[string]interface{})["subject"].(map[string]interface{})["O"].(string)
+			if !ok {
+				subjectOrg = "N/A"
 			}
 
-			if statusCode != 200 {
-				logMessage.Score += 5
-				logMessage.Matches = append(logMessage.Matches, "WebsiteDown-"+fmt.Sprint(statusCode))
+			organizationUnit, ok := leafCert.(map[string]interface{})["subject"].(map[string]interface{})["OU"].(string)
+			if !ok {
+				organizationUnit = "N/A"
 			}
-		}
 
-		if logMessage.Score > 0 {
-			logMessage.Entropy = utils.CalculateEntropy(logMessage.Score)
-			logMessage.Domain = domainStr
+			subjectCommonName, ok := leafCert.(map[string]interface{})["subject"].(map[string]interface{})["CN"].(string)
+			if !ok {
+				subjectCommonName = "N/A"
+			}
 
-			output.SendToOutput(logMessage)
+			certificate, err := json.MarshalIndent(leafCert, "", "\t")
+			if err != nil {
+				utils.Logger.Error("Error marshalling certificate", slog.String("error", err.Error()))
+			}
+
+			logMessage := types.LogMessage{
+				Timestamp: time.Now().UTC(),
+				Domain:    domainStr,
+				Vendor:    utils.GetSeverity(0),
+
+				Score:   0,
+				Matches: []string{},
+
+				IssuerCommonName:    issuer["CN"].(string),
+				SubjectCommonName:   subjectCommonName,
+				IssuerOrganization:  issuer["O"].(string),
+				SubjectOrganization: subjectOrg,
+
+				SerialNumber: leafCert.(map[string]interface{})["serial_number"].(string),
+				NotBefore:    time.Unix(int64(leafCert.(map[string]interface{})["not_before"].(float64)), 0),
+				NotAfter:     time.Unix(int64(leafCert.(map[string]interface{})["not_after"].(float64)), 0),
+
+				KeyUsage:           leafCert.(map[string]interface{})["extensions"].(map[string]interface{})["keyUsage"].(string),
+				ExtendedKeyUsage:   leafCert.(map[string]interface{})["extensions"].(map[string]interface{})["extendedKeyUsage"].(string),
+				SignatureAlgorithm: leafCert.(map[string]interface{})["signature_algorithm"].(string),
+
+				OrganizationUnit: organizationUnit,
+
+				Certificate:      string(certificate),
+				IsExpired:        time.Now().UTC().After(time.Unix(int64(leafCert.(map[string]interface{})["not_after"].(float64)), 0)),
+				IsRevoked:        false,
+				IsWildcard:       domainStr[0] == '*',
+				IssuanceDate:     time.Unix(int64(leafCert.(map[string]interface{})["not_before"].(float64)), 0),
+				ValidationMethod: "N/A",
+				Country:          "N/A",
+				IPAddress:        "N/A",
+				CertSource:       "CertStream",
+				Notes:            "N/A",
+			}
+
+			if logMessage.IsExpired {
+				logMessage.Score += 15
+				logMessage.Matches = append(logMessage.Matches, "Expired")
+			}
+
+			if IsFreeCA(issuer) {
+				logMessage.Score += 10
+				logMessage.Matches = append(logMessage.Matches, "FreeCA")
+			}
+
+			if IsSuspiciousTLD(domainStr) {
+				logMessage.Score += 5
+				logMessage.Matches = append(logMessage.Matches, "SuspiciousTLD")
+			}
+
+			if domainStr[0] == '*' {
+				domainStr = domainStr[2:]
+			}
+
+			if IsSuspiciousLength(domainStr) {
+				logMessage.Score += 5
+				logMessage.Matches = append(logMessage.Matches, "SuspiciousLength")
+			}
+
+			for _, rule := range rules {
+				for range rule.Words {
+					scan := GenericScan(rule, domainStr)
+
+					if len(scan) > 0 {
+						logMessage.Score += 1
+						logMessage.Matches = append(logMessage.Matches, rule.RuleID)
+					}
+				}
+			}
+
+			if IsDeeplyNested(domainStr) {
+				logMessage.Score += 5
+				logMessage.Matches = append(logMessage.Matches, "DeeplyNested")
+			}
+
+			if HasManyHyphens(domainStr) {
+				logMessage.Score += 5
+				logMessage.Matches = append(logMessage.Matches, "ManyHyphens")
+			}
+
+			if logMessage.Score > 0 {
+				logMessage.Entropy = utils.CalculateEntropy(logMessage.Score)
+				logMessage.Domain = domainStr
+
+				output.SendToOutput(logMessage)
+			}
 		}
 	}
 }

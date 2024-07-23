@@ -4,7 +4,6 @@ import (
 	"net/http"
 )
 
-// GetWebsite returns the status of a website
 func GetWebsite(url string) (int, string) {
 	response, err := http.Get(url)
 	if err != nil {
@@ -15,10 +14,17 @@ func GetWebsite(url string) (int, string) {
 }
 
 func ValidateURL(domain string) string {
-	// http:// or https://
 	if domain[:7] != "http://" && domain[:8] != "https://" {
 		return "https://" + domain
 	}
 
 	return domain
+}
+
+func ValidateResponse(statusCode int) bool {
+	if statusCode == 200 || (statusCode >= 301 && statusCode <= 303) || (statusCode >= 307 && statusCode <= 308) || statusCode == 410 || statusCode == 403 || statusCode == 401 || statusCode == 400 {
+		return true
+	}
+
+	return false
 }
