@@ -4,29 +4,29 @@ import "testing"
 
 func TestIsSuspiciousTLD(t *testing.T) {
 	tests := []struct {
-		name string
+		name   string
 		domain string
-		want bool
+		want   bool
 	}{
 		{
-			name: "Suspicious TLD",
+			name:   "Suspicious TLD",
 			domain: "example.xyz",
-			want: true,
+			want:   true,
 		},
 		{
-			name: "Non-Suspicious TLD",
+			name:   "Non-Suspicious TLD",
 			domain: "example.com",
-			want: false,
+			want:   false,
 		},
 		{
-			name: "Suspicious TLD",
+			name:   "Suspicious TLD",
 			domain: "example.top",
-			want: true,
+			want:   true,
 		},
 		{
-			name: "Non-Suspicious TLD",
+			name:   "Non-Suspicious TLD",
 			domain: "example.net",
-			want: false,
+			want:   false,
 		},
 	}
 
@@ -41,29 +41,29 @@ func TestIsSuspiciousTLD(t *testing.T) {
 
 func TestIsSuspiciousLength(t *testing.T) {
 	tests := []struct {
-		name string
+		name   string
 		domain string
-		want bool
+		want   bool
 	}{
 		{
-			name: "Suspicious Length",
+			name:   "Suspicious Length",
 			domain: "exampleaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com",
-			want: true,
+			want:   true,
 		},
 		{
-			name: "Non-Suspicious Length",
+			name:   "Non-Suspicious Length",
 			domain: "example.com",
-			want: false,
+			want:   false,
 		},
 		{
-			name: "Suspicious Length",
+			name:   "Suspicious Length",
 			domain: "exampleaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.xyz",
-			want: true,
+			want:   true,
 		},
 		{
-			name: "Non-Suspicious Length",
+			name:   "Non-Suspicious Length",
 			domain: "example.net",
-			want: false,
+			want:   false,
 		},
 	}
 

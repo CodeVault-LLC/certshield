@@ -15,18 +15,21 @@ func SendToStdout(data types.LogMessage) {
 			"Match found",
 			"domain", data.Domain,
 			"score", data.Score,
+			"entropy", data.Entropy,
 		)
 	} else if data.Score > 10 {
 		utils.Logger.Warn(
 			"Match found",
 			"domain", data.Domain,
 			"score", data.Score,
+			"entropy", data.Entropy,
 		)
 	} else {
 		utils.Logger.Info(
 			"Match found",
 			"domain", data.Domain,
 			"score", data.Score,
+			"entropy", data.Entropy,
 		)
 	}
 }

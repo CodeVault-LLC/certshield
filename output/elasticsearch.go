@@ -19,7 +19,7 @@ var ElasticSearch *elasticsearch.Client
 var IndexName = "codevault_source-" + time.Now().Format("2006.01.02")
 
 func InitElasticSearch() {
-	url	:= os.Getenv("ELASTICSEARCH_URL")
+	url := os.Getenv("ELASTICSEARCH_URL")
 	apiKey := os.Getenv("ELASTICSEARCH_APIKEY")
 
 	cfg := elasticsearch.Config{
@@ -65,21 +65,21 @@ func SendToElasticSearch(data types.LogMessage) {
 	}
 
 	req := esapi.IndexRequest{
-		Index: 		IndexName,
+		Index:      IndexName,
 		DocumentID: "",
-		Body: 		bytes.NewReader(dataBytes),
-		Refresh: 	"true",
+		Body:       bytes.NewReader(dataBytes),
+		Refresh:    "true",
 
 		Pretty: true,
 	}
 
 	res, err := req.Do(context.Background(), ElasticSearch)
-		if err != nil {
-			utils.Logger.Error("Error getting response from Elasticsearch", slog.String("error", err.Error()))
-		}
-		defer res.Body.Close()
+	if err != nil {
+		utils.Logger.Error("Error getting response from Elasticsearch", slog.String("error", err.Error()))
+	}
+	defer res.Body.Close()
 
-		if res.IsError() {
-			utils.Logger.Error("Error indexing document", slog.String("error", res.String()))
-		}
+	if res.IsError() {
+		utils.Logger.Error("Error indexing document", slog.String("error", res.String()))
+	}
 }

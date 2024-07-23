@@ -2,6 +2,7 @@ package main
 
 import (
 	"log/slog"
+	"os"
 
 	"github.com/CaliDog/certstream-go"
 	"github.com/codevault-llc/certshield/constants"
@@ -25,40 +26,41 @@ func main() {
 
 	output.SetupOutput()
 	rules := constants.VC.OrderRules()
+	scanPage := os.Getenv("SCAN_WEBSITE") == "true"
 
 	stream, errStream := certstream.CertStreamEventStream(false)
 	for {
 		select {
-			case jq := <-stream:
-				messageType, err := jq.String("message_type")
+		case jq := <-stream:
+			messageType, err := jq.String("message_type")
 
-				if err != nil{
-					utils.Logger.Error(
-						"Error getting message type",
-						slog.String("error", err.Error()),
-					)
-				}
-
-				if messageType != "certificate_update" {
-					continue
-				}
-
-				data, err := jq.Object("data")
-
-				if err != nil {
-					utils.Logger.Error(
-						"Error getting data",
-						slog.String("error", err.Error()),
-					)
-				}
-
-				scanner.Scan(data, rules)
-
-			case err := <-errStream:
+			if err != nil {
 				utils.Logger.Error(
-					"Error from CertStream",
+					"Error getting message type",
 					slog.String("error", err.Error()),
 				)
+			}
+
+			if messageType != "certificate_update" {
+				continue
+			}
+
+			data, err := jq.Object("data")
+
+			if err != nil {
+				utils.Logger.Error(
+					"Error getting data",
+					slog.String("error", err.Error()),
+				)
+			}
+
+			scanner.Scan(data, rules, scanPage)
+
+		case err := <-errStream:
+			utils.Logger.Error(
+				"Error from CertStream",
+				slog.String("error", err.Error()),
+			)
 		}
 	}
 }

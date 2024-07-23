@@ -2,10 +2,10 @@ package config
 
 type Rule struct {
 	Description string
-	RuleID string
+	RuleID      string
 
-	Words[] string
+	Words []string
 
 	Keywords []string
-	Score int
+	Score    int
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/codevault-llc/certshield/utils"
 )
 
-
 func GenericScan(r config.Rule, match string) []string {
 	var matches []string
 
@@ -51,7 +50,7 @@ func EndsWithScan(r config.Rule, match string) []string {
 	return matches
 }
 
-func Scan(data map[string]interface{}, rules []config.Rule) {
+func Scan(data map[string]interface{}, rules []config.Rule, scanPage bool) {
 	leafCert := data["leaf_cert"]
 	issuer, ok := leafCert.(map[string]interface{})["issuer"].(map[string]interface{})
 	if !ok {
@@ -88,34 +87,34 @@ func Scan(data map[string]interface{}, rules []config.Rule) {
 			Domain:    domainStr,
 			Vendor:    utils.GetSeverity(0),
 
-			Score:     0,
-			Matches:   []string{},
+			Score:   0,
+			Matches: []string{},
 
-			IssuerCommonName:  issuer["CN"].(string),
-			SubjectCommonName: subjectCommonName,
-			IssuerOrganization: issuer["O"].(string),
+			IssuerCommonName:    issuer["CN"].(string),
+			SubjectCommonName:   subjectCommonName,
+			IssuerOrganization:  issuer["O"].(string),
 			SubjectOrganization: subjectOrg,
 
 			SerialNumber: leafCert.(map[string]interface{})["serial_number"].(string),
 			NotBefore:    time.Unix(int64(leafCert.(map[string]interface{})["not_before"].(float64)), 0),
 			NotAfter:     time.Unix(int64(leafCert.(map[string]interface{})["not_after"].(float64)), 0),
 
-			KeyUsage: 				 leafCert.(map[string]interface{})["extensions"].(map[string]interface{})["keyUsage"].(string),
-			ExtendedKeyUsage:  leafCert.(map[string]interface{})["extensions"].(map[string]interface{})["extendedKeyUsage"].(string),
+			KeyUsage:           leafCert.(map[string]interface{})["extensions"].(map[string]interface{})["keyUsage"].(string),
+			ExtendedKeyUsage:   leafCert.(map[string]interface{})["extensions"].(map[string]interface{})["extendedKeyUsage"].(string),
 			SignatureAlgorithm: leafCert.(map[string]interface{})["signature_algorithm"].(string),
 
-			OrganizationUnit:   organizationUnit,
+			OrganizationUnit: organizationUnit,
 
-			Certificate: string(certificate),
-			IsExpired:  time.Now().UTC().After(time.Unix(int64(leafCert.(map[string]interface{})["not_after"].(float64)), 0)),
-			IsRevoked: false,
-			IsWildcard: domainStr[0] == '*',
-			IssuanceDate: time.Unix(int64(leafCert.(map[string]interface{})["not_before"].(float64)), 0),
+			Certificate:      string(certificate),
+			IsExpired:        time.Now().UTC().After(time.Unix(int64(leafCert.(map[string]interface{})["not_after"].(float64)), 0)),
+			IsRevoked:        false,
+			IsWildcard:       domainStr[0] == '*',
+			IssuanceDate:     time.Unix(int64(leafCert.(map[string]interface{})["not_before"].(float64)), 0),
 			ValidationMethod: "N/A",
-			Country: "N/A",
-			IPAddress: "N/A",
-			CertSource: "CertStream",
-			Notes: "N/A",
+			Country:          "N/A",
+			IPAddress:        "N/A",
+			CertSource:       "CertStream",
+			Notes:            "N/A",
 		}
 
 		if logMessage.IsExpired {
@@ -153,7 +152,25 @@ func Scan(data map[string]interface{}, rules []config.Rule) {
 			}
 		}
 
+		if scanPage {
+			validUrl := utils.ValidateURL(domainStr)
+			statusCode, error := utils.GetWebsite(validUrl)
+
+			if error != "" {
+				logMessage.Score += 5
+				logMessage.Matches = append(logMessage.Matches, "WebsiteDown-noDial")
+			}
+
+			if statusCode != 200 {
+				logMessage.Score += 5
+				logMessage.Matches = append(logMessage.Matches, "WebsiteDown-"+string(statusCode))
+			}
+		}
+
 		if logMessage.Score > 0 {
+			logMessage.Entropy = utils.CalculateEntropy(logMessage.Score)
+			logMessage.Domain = domainStr
+
 			output.SendToOutput(logMessage)
 		}
 	}

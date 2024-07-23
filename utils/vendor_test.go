@@ -4,29 +4,29 @@ import "testing"
 
 func TestGetSeverity(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		score int
-		want string
+		want  string
 	}{
 		{
-			name: "Very Dangerous",
+			name:  "Very Dangerous",
 			score: 20,
-			want: "Very Dangerous",
+			want:  "Very Dangerous",
 		},
 		{
-			name: "Dangerous",
+			name:  "Dangerous",
 			score: 15,
-			want: "Dangerous",
+			want:  "Dangerous",
 		},
 		{
-			name: "Suspicious",
+			name:  "Suspicious",
 			score: 5,
-			want: "Suspicious",
+			want:  "Suspicious",
 		},
 		{
-			name: "Unknown",
+			name:  "Unknown",
 			score: 0,
-			want: "Unknown",
+			want:  "Unknown",
 		},
 	}
 

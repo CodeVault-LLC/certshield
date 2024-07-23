@@ -14,13 +14,13 @@ type ViperConfig struct {
 	Description string
 
 	Rules []struct {
-		ID string
+		ID          string
 		Description string
 
 		Words []string
 
 		Keywords []string
-		Score int
+		Score    int
 	}
 }
 
@@ -52,9 +52,9 @@ func (vc *ViperConfig) OrderRules() []Rule {
 	for i, rule := range vc.Rules {
 		rules[i] = Rule{
 			Description: rule.Description,
-			RuleID: rule.ID,
-			Words: rule.Words,
-			Keywords: rule.Keywords,
+			RuleID:      rule.ID,
+			Words:       rule.Words,
+			Keywords:    rule.Keywords,
 		}
 	}
 
