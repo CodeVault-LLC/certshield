@@ -66,46 +66,73 @@ jobs:
         with:
           node-version: "16"
 
-      - name: Install Changelogithub
-        run: npm install -g changelogithub
+      - name: Install dependencies
+        run: npm install
 
-      - name: Generate Changelog
-        id: generate_changelog
-        run: changelogithub
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install GitHub CLI
-        uses: ksivamuthu/actions-setup-gh-cli@v3
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
         with:
-          version: 2.24.3
+          name: certshield-ubuntu-latest-amd64
 
-      - name: Create or Update Release
-        id: create_update_release
-        run: |
-          gh release view ${{ github.ref }} > /dev/null 2>&1
-          if [ $? -eq 0 ]; then
-            echo "Release already exists. Updating release."
-            gh release edit ${{ github.ref }} --notes "${{ steps.generate_changelog.outputs.changelog }}"
-          else
-            echo "Creating a new release."
-            gh release create ${{ github.ref }} --title "Release ${{ github.ref }}" --notes "${{ steps.generate_changelog.outputs.changelog }}"
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-windows-latest-amd64
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-macos-latest-amd64
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-ubuntu-latest-386
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-windows-latest-386
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-macos-latest-386
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-ubuntu-latest-arm
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-windows-latest-arm
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-macos-latest-arm
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-ubuntu-latest-arm64
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-windows-latest-arm64
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: certshield-macos-latest-arm64
+
+      - name: Download Semantic Release
+        run: npm install -g semantic-release
+
+      - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Release Assets
-        run: |
-          gh release upload ${{ github.ref }} certshield-ubuntu-latest-amd64.tar.gz
-          gh release upload ${{ github.ref }} certshield-ubuntu-latest-386.tar.gz
-          gh release upload ${{ github.ref }} certshield-ubuntu-latest-arm.tar.gz
-          gh release upload ${{ github.ref }} certshield-ubuntu-latest-arm64.tar.gz
-          gh release upload ${{ github.ref }} certshield-macos-latest-amd64.tar.gz
-          gh release upload ${{ github.ref }} certshield-macos-latest-386.tar.gz
-          gh release upload ${{ github.ref }} certshield-macos-latest-arm.tar.gz
-          gh release upload ${{ github.ref }} certshield-macos-latest-arm64.tar.gz
-          gh release upload ${{ github.ref }} certshield-windows-latest-amd64.zip
-          gh release upload ${{ github.ref }} certshield-windows-latest-386.zip
-          gh release upload ${{ github.ref }} certshield-windows-latest-arm.zip
-          gh release upload ${{ github.ref }} certshield-windows-latest-arm64.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
