@@ -66,8 +66,8 @@ jobs:
         with:
           node-version: "16"
 
-      - name: Install dependencies
-        run: npm install
+      - name: Download Semantic Release
+        run: npm install -g semantic-release
 
       - name: Download Build Artifacts
         uses: actions/download-artifact@v3
@@ -128,9 +128,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: certshield-macos-latest-arm64
-
-      - name: Download Semantic Release
-        run: npm install -g semantic-release
 
       - name: Create Release
         env:
