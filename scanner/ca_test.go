@@ -33,7 +33,7 @@ func TestIsFreeCA(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsFreeCA(tt.issuer); got != tt.want {
+			if got := isFreeCA(tt.issuer); got != tt.want {
 				t.Errorf("IsFreeCA() = %v, want %v", got, tt.want)
 			}
 		})

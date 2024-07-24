@@ -32,7 +32,7 @@ func TestIsSuspiciousTLD(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsSuspiciousTLD(tt.domain); got != tt.want {
+			if got := isSuspiciousTLD(tt.domain); got != tt.want {
 				t.Errorf("IsSuspiciousTLD() = %v, want %v", got, tt.want)
 			}
 		})
@@ -69,7 +69,7 @@ func TestIsSuspiciousLength(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsSuspiciousLength(tt.domain); got != tt.want {
+			if got := isSuspiciousLength(tt.domain); got != tt.want {
 				t.Errorf("IsSuspiciousLength() = %v, want %v", got, tt.want)
 			}
 		})

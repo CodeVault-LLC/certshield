@@ -1,0 +1,13 @@
+DigiCert Inc (42)
+Starfield Technologies, Inc. (2)
+Amazon (3)
+Certainly (2)
+Let's Encrypt (330)
+Sectigo Limited (18)
+Google Trust Services (7)
+DigiCert, Inc. (3)
+ZeroSSL
+Japan Registry Services Co., Ltd. (8)
+GoDaddy.com, Inc. (50)
+Microsoft Corporation (16)
+cPanel, Inc. (8)

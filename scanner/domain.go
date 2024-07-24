@@ -2,7 +2,34 @@ package scanner
 
 import "strings"
 
-func IsSuspiciousTLD(domain string) bool {
+func ScanDomain(domain string) (int, []string) {
+	var matches []string
+	var score int
+
+	if isSuspiciousTLD(domain) {
+		matches = append(matches, "Suspicious TLD")
+		score += 10
+	}
+
+	if isSuspiciousLength(domain) {
+		matches = append(matches, "Suspicious Length")
+		score += 10
+	}
+
+	if isDeeplyNested(domain) {
+		matches = append(matches, "Deeply Nested")
+		score += 10
+	}
+
+	if hasManyHyphens(domain) {
+		matches = append(matches, "Many Hyphens")
+		score += 10
+	}
+
+	return score, matches
+}
+
+func isSuspiciousTLD(domain string) bool {
 	var suspiciousTLDs = []string{
 		"xyz",
 		"top",
@@ -27,14 +54,14 @@ func IsSuspiciousTLD(domain string) bool {
 	return false
 }
 
-func IsSuspiciousLength(domain string) bool {
+func isSuspiciousLength(domain string) bool {
 	return len(domain) >= 50
 }
 
-func IsDeeplyNested(domain string) bool {
+func isDeeplyNested(domain string) bool {
 	return strings.Count(domain, ".") >= 3
 }
 
-func HasManyHyphens(domain string) bool {
+func hasManyHyphens(domain string) bool {
 	return !strings.Contains(domain, "xn--") && strings.Count(domain, "-") >= 4
 }

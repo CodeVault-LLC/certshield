@@ -10,6 +10,7 @@ import (
 	"github.com/codevault-llc/certshield/output"
 	"github.com/codevault-llc/certshield/types"
 	"github.com/codevault-llc/certshield/utils"
+	"github.com/jmoiron/jsonq"
 )
 
 func GenericScan(r config.Rule, match string) []string {
@@ -50,21 +51,43 @@ func EndsWithScan(r config.Rule, match string) []string {
 	return matches
 }
 
-func Scan(data map[string]interface{}, rules []config.Rule, scanPage bool) {
-	if data["update_type"].(string) == "PrecertLogEntry" {
-		// Ignore precertificates
-	} else if data["update_type"].(string) == "PrecertEntryWithProof" {
+func Scan(jq jsonq.JsonQuery, rules []config.Rule, scanPage bool) {
+	updateType, err := jq.String("data", "update_type")
+	if err != nil {
+		utils.Logger.Error("Error getting update type", slog.String("error", err.Error()))
 		return
-	} else if data["update_type"].(string) == "X509LogEntry" {
+	}
 
-		leafCert := data["leaf_cert"]
-		issuer, ok := leafCert.(map[string]interface{})["issuer"].(map[string]interface{})
+	if updateType == "PrecertLogEntry" {
+		return
+	} else if updateType == "PrecertEntryWithProof" {
+		return
+	} else if updateType == "X509LogEntry" {
+
+		leafCert, err := jq.Interface("data", "leaf_cert")
+		if err != nil {
+			utils.Logger.Error("Error getting leaf certificate", slog.String("error", err.Error()))
+			return
+		}
+
+		issuerInterface, err := jq.Interface("data", "leaf_cert", "issuer")
+		if err != nil {
+			utils.Logger.Error("Error getting issuer", slog.String("error", err.Error()))
+			return
+		}
+
+		issuer, ok := issuerInterface.(map[string]interface{})
 		if !ok {
 			utils.Logger.Error("Error parsing issuer")
 			return
 		}
 
-		allDomains := leafCert.(map[string]interface{})["all_domains"].([]interface{})
+		allDomains, err := jq.Array("data", "leaf_cert", "all_domains")
+		if err != nil {
+			utils.Logger.Error("Error getting all domains", slog.String("error", err.Error()))
+			return
+		}
+
 		for _, domain := range allDomains {
 			domainStr := domain.(string)
 
@@ -81,18 +104,18 @@ func Scan(data map[string]interface{}, rules []config.Rule, scanPage bool) {
 				}
 			}
 
-			subjectOrg, ok := leafCert.(map[string]interface{})["subject"].(map[string]interface{})["O"].(string)
-			if !ok {
+			subjectOrg, ok := jq.String("data", "leaf_cert", "subject", "O")
+			if ok != nil {
 				subjectOrg = "N/A"
 			}
 
-			organizationUnit, ok := leafCert.(map[string]interface{})["subject"].(map[string]interface{})["OU"].(string)
-			if !ok {
+			organizationUnit, ok := jq.String("data", "leaf_cert", "subject", "OU")
+			if ok != nil {
 				organizationUnit = "N/A"
 			}
 
-			subjectCommonName, ok := leafCert.(map[string]interface{})["subject"].(map[string]interface{})["CN"].(string)
-			if !ok {
+			subjectCommonName, ok := jq.String("data", "leaf_cert", "subject", "CN")
+			if ok != nil {
 				subjectCommonName = "N/A"
 			}
 
@@ -141,12 +164,16 @@ func Scan(data map[string]interface{}, rules []config.Rule, scanPage bool) {
 				logMessage.Matches = append(logMessage.Matches, "Expired")
 			}
 
-			if IsFreeCA(issuer) {
-				logMessage.Score += 10
-				logMessage.Matches = append(logMessage.Matches, "FreeCA")
-			}
+			// Scan for Certification CA.
+			scannedCAScore, scannedCAMatches := ScanCA(jq)
+			logMessage.Score += scannedCAScore
+			logMessage.Matches = append(logMessage.Matches, scannedCAMatches...)
 
-			if IsSuspiciousTLD(domainStr) {
+			scannedDomainScore, scannedDomainMatches := ScanDomain(domainStr)
+			logMessage.Score += scannedDomainScore
+			logMessage.Matches = append(logMessage.Matches, scannedDomainMatches...)
+
+			if isSuspiciousTLD(domainStr) {
 				logMessage.Score += 5
 				logMessage.Matches = append(logMessage.Matches, "SuspiciousTLD")
 			}
@@ -155,7 +182,7 @@ func Scan(data map[string]interface{}, rules []config.Rule, scanPage bool) {
 				domainStr = domainStr[2:]
 			}
 
-			if IsSuspiciousLength(domainStr) {
+			if isSuspiciousLength(domainStr) {
 				logMessage.Score += 5
 				logMessage.Matches = append(logMessage.Matches, "SuspiciousLength")
 			}
@@ -171,19 +198,10 @@ func Scan(data map[string]interface{}, rules []config.Rule, scanPage bool) {
 				}
 			}
 
-			if IsDeeplyNested(domainStr) {
-				logMessage.Score += 5
-				logMessage.Matches = append(logMessage.Matches, "DeeplyNested")
-			}
-
-			if HasManyHyphens(domainStr) {
-				logMessage.Score += 5
-				logMessage.Matches = append(logMessage.Matches, "ManyHyphens")
-			}
-
 			if logMessage.Score > 0 {
 				logMessage.Entropy = utils.CalculateEntropy(logMessage.Score)
 				logMessage.Domain = domainStr
+				logMessage.ValidationMethod = GetCertValidationType(leafCert.(map[string]interface{})["extensions"].(map[string]interface{})["certificatePolicies"].(string))
 
 				output.SendToOutput(logMessage)
 			}

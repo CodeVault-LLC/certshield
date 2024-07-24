@@ -45,16 +45,7 @@ func main() {
 				continue
 			}
 
-			data, err := jq.Object("data")
-
-			if err != nil {
-				utils.Logger.Error(
-					"Error getting data",
-					slog.String("error", err.Error()),
-				)
-			}
-
-			scanner.Scan(data, rules, scanPage)
+			scanner.Scan(jq, rules, scanPage)
 
 		case err := <-errStream:
 			utils.Logger.Error(
