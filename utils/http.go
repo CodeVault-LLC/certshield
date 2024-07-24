@@ -2,6 +2,8 @@ package utils
 
 import (
 	"net/http"
+
+	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
 func GetWebsite(url string) (int, string) {
@@ -23,6 +25,18 @@ func ValidateURL(domain string) string {
 
 func ValidateResponse(statusCode int) bool {
 	if statusCode == 200 || (statusCode >= 301 && statusCode <= 303) || (statusCode >= 307 && statusCode <= 308) || statusCode == 410 || statusCode == 403 || statusCode == 401 || statusCode == 400 {
+		return true
+	}
+
+	return false
+}
+
+func FilterDomain(domain string, filter string) bool {
+	if filter == "" {
+		return true
+	}
+
+	if fuzzy.Match(filter, domain) {
 		return true
 	}
 

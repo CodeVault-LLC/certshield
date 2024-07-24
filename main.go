@@ -1,13 +1,13 @@
 package main
 
 import (
+	"flag"
 	"log/slog"
-	"os"
 
 	"github.com/CaliDog/certstream-go"
+	"github.com/codevault-llc/certshield/config"
 	"github.com/codevault-llc/certshield/constants"
 	"github.com/codevault-llc/certshield/output"
-	"github.com/codevault-llc/certshield/scanner"
 	"github.com/codevault-llc/certshield/utils"
 
 	"github.com/joho/godotenv"
@@ -26,7 +26,21 @@ func main() {
 
 	output.SetupOutput()
 	rules := constants.VC.OrderRules()
-	scanPage := os.Getenv("SCAN_WEBSITE") == "true"
+
+	pingFlag := flag.Bool("ping", false, "Ping the website")
+	filter := flag.String("filter", "", "Filter specific keywords")
+
+	vendor := flag.Int("vendor", 0, "Minimum vendor score")
+	flag.Parse()
+	if *vendor != 0 {
+		config.RunConfigInstance.VendorScore = *vendor
+	}
+	if *pingFlag {
+		config.RunConfigInstance.PingPages = true
+	}
+	if *filter != "" {
+		config.RunConfigInstance.Filter = *filter
+	}
 
 	stream, errStream := certstream.CertStreamEventStream(false)
 	for {
@@ -45,7 +59,7 @@ func main() {
 				continue
 			}
 
-			scanner.Scan(jq, rules, scanPage)
+			Scan(jq, rules, config.RunConfigInstance)
 
 		case err := <-errStream:
 			utils.Logger.Error(

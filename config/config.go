@@ -60,3 +60,15 @@ func (vc *ViperConfig) OrderRules() []Rule {
 
 	return rules
 }
+
+type RunConfig struct {
+	PingPages   bool // Check if they are alive
+	Filter      string
+	VendorScore int
+}
+
+var RunConfigInstance = RunConfig{
+	PingPages:   false,
+	Filter:      "",
+	VendorScore: 0,
+}

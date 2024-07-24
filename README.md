@@ -53,6 +53,14 @@ ELASTICSEARCH_URL=http://localhost:9200
 ELASTICSEARCH_APIKEY=yourapikey
 ```
 
+We do also allow for certain arguments when running the program:
+
+```bash
+Usage of ./certshield:
+  -ping (default false)
+         Ping the websites to see if they are working
+```
+
 ## Disclaimer
 
 This project is intended for educational purposes only. The author is not responsible for any misuse or damage caused by this program. Use at your own risk.
