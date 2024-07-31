@@ -46,3 +46,11 @@ type LogMessage struct {
 	CertSource string `json:"cert_source"` // Source of the certificate (e.g., CT log, abuse.ch)
 	Notes      string `json:"notes"`       // Additional notes or comments
 }
+
+type Scan struct {
+	ID int `json:"id"`
+
+	URL string `json:"url"`
+
+	LogMessage
+}

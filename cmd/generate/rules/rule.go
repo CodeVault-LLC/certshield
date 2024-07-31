@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/codevault-llc/certshield/config"
-	"github.com/codevault-llc/certshield/scanner"
+	"github.com/codevault-llc/certshield/core/scanner"
 )
 
 func validate(r config.Rule, truePositives []string, falsePositives []string) *config.Rule {

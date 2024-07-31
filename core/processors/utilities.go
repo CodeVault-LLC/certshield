@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/codevault-llc/certshield/config"
-	"github.com/codevault-llc/certshield/scanner"
+	"github.com/codevault-llc/certshield/core/scanner"
 	"github.com/codevault-llc/certshield/types"
 	"github.com/codevault-llc/certshield/utils"
 	"github.com/jmoiron/jsonq"
@@ -31,6 +32,9 @@ func shouldProcessDomain(domainStr string, runConfig config.RunConfig) bool {
 		return false
 	}
 	if runConfig.PingPages {
+		if runConfig.Debug {
+			utils.Logger.Info("Pinging domain", slog.String("domain", domainStr))
+		}
 		validUrl := utils.ValidateURL(domainStr)
 		statusCode, err := utils.GetWebsite(validUrl)
 		if err != "" || !utils.ValidateResponse(statusCode) {
@@ -128,7 +132,6 @@ func applyScoringRules(logMessage *types.LogMessage, jq jsonq.JsonQuery, rules [
 		domainStr = domainStr[2:]
 	}
 
-	// Create a channel to handle scoring rule results
 	ruleResults := make(chan ruleResult, len(rules))
 
 	for _, rule := range rules {

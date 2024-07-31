@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/codevault-llc/certshield/config"
-	"github.com/codevault-llc/certshield/processors"
+	"github.com/codevault-llc/certshield/core/processors"
 	"github.com/codevault-llc/certshield/utils"
 	"github.com/jmoiron/jsonq"
 )

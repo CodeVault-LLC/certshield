@@ -2,6 +2,7 @@ package utils
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
@@ -16,7 +17,7 @@ func GetWebsite(url string) (int, string) {
 }
 
 func ValidateURL(domain string) string {
-	if domain[:7] != "http://" && domain[:8] != "https://" {
+	if !strings.HasPrefix(domain, "http://") && !strings.HasPrefix(domain, "https://") {
 		return "https://" + domain
 	}
 

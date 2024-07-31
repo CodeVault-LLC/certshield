@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/codevault-llc/certshield/config"
 	"github.com/codevault-llc/certshield/utils"
 )
 
@@ -30,7 +31,9 @@ func lookupValidationCode(entry string) string {
 
 	switch entry {
 	default:
-		utils.Logger.Info("Unknown validation code", slog.String("code", entry))
+		if config.RunConfigInstance.Debug {
+			utils.Logger.Info("Unknown validation code", slog.String("code", entry))
+		}
 		return "Unknown"
 	case "1.3.6.1.4.1.22177.300.2.1.4.5":
 		return "Erklärung zum Zertifizierungsbetrieb der DFN-PKI - Sicherheitsniveau Global - Version 5"
